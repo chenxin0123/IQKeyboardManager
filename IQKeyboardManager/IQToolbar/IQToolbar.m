@@ -1,4 +1,4 @@
-//
+//!
 //  IQToolbar.m
 // https://github.com/hackiftekhar/IQKeyboardManager
 // Copyright (c) 2013-16 Iftekhar Qurashi.
@@ -182,6 +182,7 @@
     }
 }
 
+/// 调整placeHolder的frame
 -(void)layoutSubviews
 {
     [super layoutSubviews];
@@ -251,7 +252,7 @@
         if ([item isKindOfClass:[IQTitleBarButtonItem class]])
         {
             CGRect titleRect = CGRectMake(x, 0, width, self.frame.size.height);
-            item.customView.frame = titleRect;
+//            item.customView.frame = titleRect;
             break;
         }
     }

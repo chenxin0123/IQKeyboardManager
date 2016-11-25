@@ -1,4 +1,4 @@
-//
+//!
 //  IQKeyboardManagerConstants.h
 // https://github.com/hackiftekhar/IQKeyboardManager
 // Copyright (c) 2013-16 Iftekhar Qurashi.
@@ -31,6 +31,7 @@
 ///-----------------------------------
 
 /**
+ 键盘上方toolbar的排序方式
  `IQAutoToolbarBySubviews`
  Creates Toolbar according to subview's hirarchy of Textfield's in view.
  
@@ -47,6 +48,7 @@ typedef NS_ENUM(NSInteger, IQAutoToolbarManageBehaviour) {
 };
 
 /**
+ 上一个下一个按钮的显示方案
  `IQPreviousNextDisplayModeDefault`
  Show NextPrevious when there are more than 1 textField otherwise hide.
  
@@ -54,7 +56,7 @@ typedef NS_ENUM(NSInteger, IQAutoToolbarManageBehaviour) {
  Do not show NextPrevious buttons in any case.
  
  `IQPreviousNextDisplayModeAlwaysShow`
- Always show nextPrevious buttons, if there are more than 1 textField then both buttons will be visible but will be shown as disabled.
+ Always show nextPrevious buttons, if there are not more than 1 textField then both buttons will be visible but will be shown as disabled.
  */
 typedef NS_ENUM(NSUInteger, IQPreviousNextDisplayMode) {
     IQPreviousNextDisplayModeDefault,

@@ -1,4 +1,4 @@
-//
+//!
 //  IQKeyboardReturnKeyHandler.m
 // https://github.com/hackiftekhar/IQKeyboardManager
 // Copyright (c) 2013-16 Iftekhar Qurashi.
@@ -97,6 +97,7 @@ NSString *const kIQTextFieldReturnKeyType   =   @"kIQTextFieldReturnKeyType";
     for (UIView *textField in textFields)  [self removeTextFieldView:textField];
 }
 
+/// returnKeyType delegate还原
 -(void)removeTextFieldView:(UIView*)view
 {
     NSDictionary *dict = [self textFieldViewCachedInfo:view];
@@ -113,6 +114,7 @@ NSString *const kIQTextFieldReturnKeyType   =   @"kIQTextFieldReturnKeyType";
     }
 }
 
+/// 保存returnKeyType delegate
 -(void)addTextFieldView:(UIView*)view
 {
     NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
@@ -130,6 +132,7 @@ NSString *const kIQTextFieldReturnKeyType   =   @"kIQTextFieldReturnKeyType";
     [textFieldInfoCache addObject:dict];
 }
 
+/// 将最后一个输入框returnKeyType设为lastTextFieldReturnKeyType其他设为UIReturnKeyNext
 -(void)updateReturnKeyTypeOnTextField:(UIView*)textField
 {
     UIView *superConsideredView;
@@ -179,6 +182,8 @@ NSString *const kIQTextFieldReturnKeyType   =   @"kIQTextFieldReturnKeyType";
 
 #pragma mark - Goto next or Resign.
 
+/// 最后一个输入框resignFirstResponder
+/// 否则下一个输入框becomeFirstResponder
 -(BOOL)goToNextResponderOrResign:(UIView*)textField
 {
     UIView *superConsideredView;

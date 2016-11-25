@@ -72,7 +72,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 /** To save rootViewController.view.frame. */
 @property(nonatomic, assign) CGRect     topViewBeginRect;
 
-/** To save rootViewController */
+/** To save rootViewController [_textFieldView topMostController] */
 @property(nonatomic, weak) UIViewController *rootViewController;
 
 /** To save topBottomLayoutConstraint original constant */
@@ -110,7 +110,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 @property(nonatomic, assign) NSInteger  animationCurve;
 
 /*******************************************/
-
+/// 注册了通知的类集合 比如：UITextField UITextFieldTextDidBeginEditingNotification UITextFieldTextDidEndEditingNotification
 @property(nonatomic, strong, nonnull, readwrite) NSMutableSet<Class> *registeredClasses;
 
 @property(nonatomic, strong, nonnull, readwrite) NSMutableSet<Class> *disabledDistanceHandlingClasses;
@@ -134,10 +134,12 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 
     /*******************************************/
     
-    /** To save keyboardWillShowNotification. Needed for enable keyboard functionality. */
+    /** To save keyboardWillShowNotification. Needed for enable keyboard functionality. 
+     *  有值说明正在显示
+     */
     NSNotification          *_kbShowNotification;
     
-    /** To save keyboard size. */
+    /** To save keyboard size. 键盘显示出来的部分的size */
     CGSize                   _kbSize;
     
     /** To save Status Bar size. */
@@ -177,6 +179,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 #pragma mark - Initializing functions
 
 /** Override +load method to enable KeyboardManager when class loader load IQKeyboardManager. Enabling when app starts (No need to write any code) */
+/// 初始化sharedManager
 +(void)load
 {
     //Enabling IQKeyboardManager. Loading asynchronous on main thread
@@ -184,6 +187,15 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 /*  Singleton Object Initialization. */
+/// 注册键盘通知
+/// 注册UITextField、UITextView的BeginEditing以及EndEditing通知
+/// 注册屏幕方向改变通知
+/// 注册状态栏frame改变通知
+/// 添加一个手势来处理touchOutside
+/// 设置一些默认值
+/// 初始化IQToolbar, IQTitleBarButtonItem, IQBarButtonItem等 防止第一次显示的时候有延迟
+/// 初始化disabledDistanceHandlingClasses disabledToolbarClasses disabledTouchResignedClasses
+/// 将_UIAlertControllerTextFieldViewController加入disabledDistanceHandlingClasses disabledToolbarClasses disabledTouchResignedClasses
 -(instancetype)init
 {
 	if (self = [super init])
@@ -228,19 +240,20 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             //Setting it's initial values
             strongSelf.animationDuration = 0.25;
             strongSelf.animationCurve = UIViewAnimationCurveEaseInOut;
-            [self setEnable:YES];
-			[self setKeyboardDistanceFromTextField:10.0];
-            [self setShouldPlayInputClicks:YES];
-            [self setShouldResignOnTouchOutside:NO];
-            [self setOverrideKeyboardAppearance:NO];
-            [self setKeyboardAppearance:UIKeyboardAppearanceDefault];
-            [self setEnableAutoToolbar:YES];
-            [self setPreventShowingBottomBlankSpace:YES];
-            [self setShouldShowTextFieldPlaceholder:YES];
-            [self setToolbarManageBehaviour:IQAutoToolbarBySubviews];
-            [self setLayoutIfNeededOnUpdate:NO];
-            [self setShouldFixInteractivePopGestureRecognizer:YES];
+            [self setEnable:YES]; // 开启
+			[self setKeyboardDistanceFromTextField:10.0]; // 输入框与键盘之间距离10
+            [self setShouldPlayInputClicks:YES]; // 点击上一个/下一个/完成 播放声音
+            [self setShouldResignOnTouchOutside:NO]; // 点击外面 不隐藏键盘
+            [self setOverrideKeyboardAppearance:NO]; // 不改变键盘外观
+            [self setKeyboardAppearance:UIKeyboardAppearanceDefault]; // 默认外观OverrideKeyboardAppearance为YES才有效
+            [self setEnableAutoToolbar:YES]; // 显示toolbar 键盘的inputAccessoryView
+            [self setPreventShowingBottomBlankSpace:YES]; //
+            [self setShouldShowTextFieldPlaceholder:YES]; // 在toolbar中间显示placeHolder
+            [self setToolbarManageBehaviour:IQAutoToolbarBySubviews]; // 设置多个输入框的排序方式
+            [self setLayoutIfNeededOnUpdate:NO]; //controllers的view的frame改变时不更新
+            [self setShouldFixInteractivePopGestureRecognizer:YES];//https://github.com/hackiftekhar/IQKeyboardManager/issues/464
             
+            //防止第一次显示的时候有延迟 所以先初始化
             //Loading IQToolbar, IQTitleBarButtonItem, IQBarButtonItem to fix first time keyboard apperance delay (Bug ID: #550)
             {
                 UITextField *view = [[UITextField alloc] init];
@@ -297,6 +310,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 #pragma mark - Dealloc
+/// disable 以及移除所有的通知
 -(void)dealloc
 {
     //  Disable the keyboard manager.
@@ -310,6 +324,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 -(void)setEnable:(BOOL)enable
 {
 	// If not enabled, enable it.
+    // NO -> YES 如果正在显示 发送_kbShowNotification来调整视图
     if (enable == YES &&
         _enable == NO)
     {
@@ -322,6 +337,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
         [self showLog:IQLocalizedString(@"enabled", nil)];
     }
 	//If not disable, desable it.
+    // YES -> NO 调用keyboardWillHide来隐藏
     else if (enable == NO &&
              _enable == YES)
     {
@@ -334,12 +350,14 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
         [self showLog:IQLocalizedString(@"disabled", nil)];
     }
 	//If already disabled.
+    // NO -> NO
 	else if (enable == NO &&
              _enable == NO)
 	{
         [self showLog:IQLocalizedString(@"already disabled", nil)];
 	}
 	//If already enabled.
+    // YES -> YES
 	else if (enable == YES &&
              _enable == YES)
 	{
@@ -347,6 +365,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 	}
 }
 
+/// 根据_enabledDistanceHandlingClasses以及_disabledDistanceHandlingClasses返回最终的enable
 -(BOOL)privateIsEnabled
 {
     BOOL enable = _enable;
@@ -394,7 +413,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [self showLog:[NSString stringWithFormat:@"keyboardDistanceFromTextField: %.2f",_keyboardDistanceFromTextField]];
 }
 
-/** Enabling/disable gesture on touching. */
+/** Enabling/disable gesture on touching.  调用 privateShouldResignOnTouchOutside来获取最终是否允许 */
 -(void)setShouldResignOnTouchOutside:(BOOL)shouldResignOnTouchOutside
 {
     [self showLog:[NSString stringWithFormat:@"shouldResignOnTouchOutside: %@",shouldResignOnTouchOutside?@"Yes":@"No"]];
@@ -405,17 +424,22 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [_tapGesture setEnabled:[self privateShouldResignOnTouchOutside]];
 }
 
+/// 返回touchOutside是否隐藏键盘
+/// 影响返回值的有 _shouldResignOnTouchOutside _enabledTouchResignedClasses _disabledTouchResignedClasses
 -(BOOL)privateShouldResignOnTouchOutside
 {
     BOOL shouldResignOnTouchOutside = _shouldResignOnTouchOutside;
     
+    // 输入框所在的视图
     UIViewController *textFieldViewController = [_textFieldView viewController];
     
     if (textFieldViewController)
     {
+        // 如果NO 查看所在视图是否强制开启
         if (shouldResignOnTouchOutside == NO)
         {
-            //If viewController is kind of enable viewController class, then assuming shouldResignOnTouchOutside is enabled.
+            // If viewController is kind of enable viewController class, then assuming shouldResignOnTouchOutside is enabled.
+            // _enabledTouchResignedClasses中存放强制开启的类
             for (Class enabledClass in _enabledTouchResignedClasses)
             {
                 if ([textFieldViewController isKindOfClass:enabledClass])
@@ -426,9 +450,11 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             }
         }
         
+        // 如果YES 查看所在视图是否强制关闭
         if (shouldResignOnTouchOutside)
         {
             //If viewController is kind of disable viewController class, then assuming shouldResignOnTouchOutside is disable.
+            // _enabledTouchResignedClasses中存放强制关闭的类
             for (Class disabledClass in _disabledTouchResignedClasses)
             {
                 if ([textFieldViewController isKindOfClass:disabledClass])
@@ -443,7 +469,11 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     return shouldResignOnTouchOutside;
 }
 
-/** Enable/disable autotoolbar. Adding and removing toolbar if required. */
+/**
+ * Enable/disable autotoolbar. Adding and removing toolbar if required.
+ * 调用privateIsEnableAutoToolbar来获取最终值
+ * 移除或者添加toolbar
+ */
 -(void)setEnableAutoToolbar:(BOOL)enableAutoToolbar
 {
     _enableAutoToolbar = enableAutoToolbar;
@@ -462,6 +492,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
 }
 
+/// 根据_enableAutoToolbar、_enabledToolbarClasses、_disabledToolbarClasses返回是否需要在键盘上放toolbar
 -(BOOL)privateIsEnableAutoToolbar
 {
     BOOL enableAutoToolbar = _enableAutoToolbar;
@@ -502,7 +533,10 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 
 #pragma mark - Private Methods
 
-/** Getting keyWindow. */
+/** 
+ Getting keyWindow.
+ 返回_textFieldView.window或者[[UIApplication sharedApplication] keyWindow]
+ */
 -(UIWindow *)keyWindow
 {
     if (_textFieldView.window)
@@ -528,6 +562,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 /*  Helper function to manipulate RootViewController's frame with animation. */
+/// 设置origin
 -(void)setRootViewFrame:(CGRect)frame
 {
     //  Getting topMost ViewController.
@@ -1008,7 +1043,10 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 
 #pragma mark - Public Methods
 
-/*  Refreshes textField/textView position if any external changes is explicitly made by user.   */
+/*  
+ Refreshes textField/textView position if any external changes is explicitly made by user.
+ 公共方法
+ */
 - (void)reloadLayoutIfNeeded
 {
     if ([self privateIsEnabled] == YES)
@@ -1024,7 +1062,12 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 #pragma mark - UIKeyboad Notification methods
-/*  UIKeyboardWillShowNotification. */
+/// UIKeyboardWillShowNotification.
+/// _keyboardShowing->YES
+/// 保存layoutGuide信息
+/// 获取rootViewController
+/// 保存动画曲线 时长 显示出来部分的size
+/// adjustFrame
 -(void)keyboardWillShow:(NSNotification*)aNotification
 {
     _kbShowNotification = aNotification;
@@ -1106,7 +1149,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [self showLog:[NSString stringWithFormat:@"****** %@ ended: %g seconds ******",NSStringFromSelector(_cmd),elapsedTime]];
 }
 
-/*  UIKeyboardDidShowNotification. */
+/// UIKeyboardDidShowNotification.
+/// adjustFrame
 - (void)keyboardDidShow:(NSNotification*)aNotification
 {
     if ([self privateIsEnabled] == NO)	return;
@@ -1131,7 +1175,12 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [self showLog:[NSString stringWithFormat:@"****** %@ ended: %g seconds ******",NSStringFromSelector(_cmd),elapsedTime]];
 }
 
-/*  UIKeyboardWillHideNotification. So setting rootViewController to it's default frame. */
+/// UIKeyboardWillHideNotification. So setting rootViewController to it's default frame.
+/// _keyboardShowing = NO
+/// _animationDuration
+/// _lastScrollView?信息重置 inset offset...
+/// layoutGuideConstraint信息还原
+/// 重置各个属性
 - (void)keyboardWillHide:(NSNotification*)aNotification
 {
     //If it's not a fake notification generated by [self setEnable:NO].
@@ -1183,6 +1232,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             {
                 CGSize contentSize = CGSizeMake(MAX(superscrollView.contentSize.width, CGRectGetWidth(superscrollView.frame)), MAX(superscrollView.contentSize.height, CGRectGetHeight(superscrollView.frame)));
                 
+                // minimumY 相当于滑到最底下 不能再大了
                 CGFloat minimumY = contentSize.height-CGRectGetHeight(superscrollView.frame);
                 
                 if (minimumY<superscrollView.contentOffset.y)
@@ -1197,6 +1247,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
     
     //  Setting rootViewController frame to it's original position. //  (Bug ID: #18)
+    // 方向改变也会发送UIKeyboardWillHideNotification
     if (!CGRectEqualToRect(_topViewBeginRect, CGRectZero) &&
         _rootViewController)
     {
@@ -1225,9 +1276,11 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
                 _movedDistance = 0;
 
                 //Animating content if needed (Bug ID: #204)
+                //https://github.com/hackiftekhar/IQKeyboardManager/issues/204
                 if (strongSelf.layoutIfNeededOnUpdate)
                 {
                     //Animating content (Bug ID: #160)
+                    //https://github.com/hackiftekhar/IQKeyboardManager/issues/160
                     [strongSelf.rootViewController.view setNeedsLayout];
                     [strongSelf.rootViewController.view layoutIfNeeded];
                 }
@@ -1278,7 +1331,15 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 #pragma mark - UITextFieldView Delegate methods
-/**  UITextFieldTextDidBeginEditingNotification, UITextViewTextDidBeginEditingNotification. Fetching UITextFieldView object. */
+/**
+ * UITextFieldTextDidBeginEditingNotification, UITextViewTextDidBeginEditingNotification. Fetching UITextFieldView object.
+ * _textFieldView指向输入框实例
+ * 修改keyboardAppearance
+ * privateIsEnabled ? UITextView->addToolbarIfRequired: ALL->removeToolbarIfRequired
+ * privateShouldResignOnTouchOutside? 手势 点击外部自动resign
+ * 保存layoutGuide信息 获取rootViewController
+ * adjustFrame
+ */
 -(void)textFieldViewDidBeginEditing:(NSNotification*)notification
 {
     CFTimeInterval startTime = CACurrentMediaTime();
@@ -1465,6 +1526,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 }
 
 /**  UIApplicationDidChangeStatusBarFrameNotification. Need to refresh view position and update _topViewBeginRect. (Bug ID: #446)*/
+/// 更新topViewBeginRect
+///
 - (void)didChangeStatusBarFrame:(NSNotification*)aNotification
 {
     CGRect oldStatusBarFrame = _statusBarFrame;
@@ -1533,7 +1596,11 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             [[touch view] isKindOfClass:[UINavigationBar class]]);
 }
 
-/** Resigning textField. */
+/**
+ * Resigning textField.
+ * 取消_textFieldView第一响应者 
+ * 如果_textFieldView为空返回NO
+ */
 - (BOOL)resignFirstResponder
 {
     if (_textFieldView)
@@ -1561,7 +1628,10 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
 }
 
-/** Returns YES if can navigate to previous responder textField/textView, otherwise NO. */
+/** 
+ Returns YES if can navigate to previous responder textField/textView, otherwise NO. 
+ 获取所有输入框 检查当前的_textFieldView的index 不是第一个就返回YES
+ */
 -(BOOL)canGoPrevious
 {
     //Getting all responder view's.
@@ -1582,7 +1652,10 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
 }
 
-/** Returns YES if can navigate to next responder textField/textView, otherwise NO. */
+/** 
+ Returns YES if can navigate to next responder textField/textView, otherwise NO. 
+ 不是最后一个则返回YES
+ */
 -(BOOL)canGoNext
 {
     //Getting all responder view's.
@@ -1679,12 +1752,18 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 
 #pragma mark AutoToolbar methods
 
-/**	Get all UITextField/UITextView siblings of textFieldView. */
+/**	Get all UITextField/UITextView siblings of textFieldView. 
+ *  返回所有的输入框 这些输入框可能不在同一个父视图内 
+ *  已经根据_toolbarManageBehaviour排好序
+ *  上一个 下一个就是在这些视图之间切换
+ */
 -(NSArray*)responderViews
 {
     UIView *superConsideredView;
     
-    //If find any consider responderView in it's upper hierarchy then will get deepResponderView.
+    // If find any consider responderView in it's upper hierarchy then will get deepResponderView.
+    // 查找_textFieldView的父视图中是否有属于_toolbarPreviousNextAllowedClasses的类
+    // 如果有多个 那么顺序是不被保证的。。。
     for (Class consideredClass in _toolbarPreviousNextAllowedClasses)
     {
         superConsideredView = [_textFieldView superviewOfClassType:consideredClass];
@@ -1696,6 +1775,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     //If there is a superConsideredView in view's hierarchy, then fetching all it's subview that responds. No sorting for superConsideredView, it's by subView position.    (Enhancement ID: #22)
     if (superConsideredView)
     {
+        // IQAutoToolbarByPosition
         return [superConsideredView deepResponderViews];
     }
     //Otherwise fetching all the siblings
@@ -1727,7 +1807,12 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
 }
 
-/** Add toolbar if it is required to add on textFields and it's siblings. */
+/// Add toolbar if it is required to add on textFields and it's siblings.
+/// 1.获取所有的输入框数组并排序
+/// 2.根据previousNextDisplayMode设置inputAccessoryView
+/// 3.根据_toolbarDoneBarButtonItemImage和_toolbarDoneBarButtonItemText设置样式
+/// 4.设置toolbar的tinColor显示placeHolder
+/// 5.Previous以及Next的enable属性
 -(void)addToolbarIfRequired
 {
     CFTimeInterval startTime = CACurrentMediaTime();
@@ -1745,8 +1830,14 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
         
         //Either there is no inputAccessoryView or if accessoryView is not appropriate for current situation(There is Previous/Next/Done toolbar).
         //setInputAccessoryView: check   (Bug ID: #307)
+        //https://github.com/hackiftekhar/IQKeyboardManager/pull/307
+        
+        // 没有或者有PreviousNext 换成只有Done的toolbar 并根据_toolbarDoneBarButtonItemImage和_toolbarDoneBarButtonItemText设置样式
+        // 已有Done的toolbar 根据_toolbarDoneBarButtonItemImage和_toolbarDoneBarButtonItemText设置样式
+        
         if ([textField respondsToSelector:@selector(setInputAccessoryView:)])
         {
+            
             BOOL needReload = NO;
 
             if (![textField inputAccessoryView] || [[textField inputAccessoryView] tag] == kIQPreviousNextButtonToolbarTag)
@@ -1774,6 +1865,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             else if ([[textField inputAccessoryView] isKindOfClass:[IQToolbar class]] &&
                      ([[textField inputAccessoryView] tag] == kIQDoneButtonToolbarTag))
             {
+                
+                
                 IQToolbar *toolbar = (IQToolbar*)[textField inputAccessoryView];
                 
                 //Supporting Custom Done button image (Enhancement ID: #366)
@@ -1811,6 +1904,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
             }
         }
         
+        // 设置toolbar个tinColor
         if ([textField.inputAccessoryView isKindOfClass:[IQToolbar class]] &&
             textField.inputAccessoryView.tag == kIQDoneButtonToolbarTag)
         {
@@ -1848,7 +1942,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
                         break;
                 }
             }
-            
+            //显示输入框的placeHolder
             //If need to show placeholder
             if (_shouldShowTextFieldPlaceholder &&
                 textField.shouldHidePlaceholderText == NO)
@@ -1876,6 +1970,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     }
     else if ((siblings.count && self.previousNextDisplayMode == IQPreviousNextDisplayModeDefault) || self.previousNextDisplayMode == IQPreviousNextDisplayModeAlwaysShow)
     {
+        //  遍历所有的输入框
+        //  已有Done样式或无inputAccessoryView 更换样式 根据_toolbarDoneBarButtonItemImage和_toolbarDoneBarButtonItemText更新
         //	If more than 1 textField is found. then adding previous/next/done buttons on it.
         for (UITextField *textField in siblings)
         {
@@ -1946,7 +2042,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
                     [textField reloadInputViews];
                 }
             }
-            
+            // 更新toolbar风格tinColor 显示placeHolder
             if ([textField.inputAccessoryView isKindOfClass:[IQToolbar class]] &&
                 textField.inputAccessoryView.tag == kIQPreviousNextButtonToolbarTag)
             {
@@ -2009,7 +2105,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
                     [toolbar setTitle:nil];
                 }
 
-                //In case of UITableView (Special), the next/previous buttons has to be refreshed everytime.    (Bug ID: #56)
+                //  下一个下一个按钮Enable属性
+                //  In case of UITableView (Special), the next/previous buttons has to be refreshed everytime.    (Bug ID: #56)
                 //	If firstTextField, then previous should not be enabled.
                 if (siblings[0] == textField)
                 {
@@ -2039,7 +2136,11 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [self showLog:[NSString stringWithFormat:@"****** %@ ended: %g seconds ******",NSStringFromSelector(_cmd),elapsedTime]];
 }
 
-/** Remove any toolbar if it is IQToolbar. */
+/**
+ * Remove any toolbar if it is IQToolbar.
+ * 获取所有的输入框 然后将inputAccessoryView设为nil
+ * 只会移除kIQDoneButtonToolbarTag以及kIQPreviousNextButtonToolbarTag的inputAccessoryView
+ */
 -(void)removeToolbarIfRequired  //  (Bug ID: #18)
 {
     CFTimeInterval startTime = CACurrentMediaTime();
@@ -2153,6 +2254,8 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
 
 /**
  Add customised Notification for third party customised TextField/TextView.
+ 比如：UITextField UITextFieldTextDidBeginEditingNotification UITextFieldTextDidEndEditingNotification
+ aClass 被放入_registeredClasses
  */
 -(void)registerTextFieldViewClass:(nonnull Class)aClass
   didBeginEditingNotificationName:(nonnull NSString *)didBeginEditingNotificationName
@@ -2164,6 +2267,7 @@ NSInteger const kIQPreviousNextButtonToolbarTag     =   -1005;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textFieldViewDidEndEditing:) name:didEndEditingNotificationName object:nil];
 }
 
+/// 打印日志
 -(void)showLog:(NSString*)logString
 {
     if (_enableDebugging)

@@ -107,7 +107,7 @@ extern NSInteger const kIQPreviousNextButtonToolbarTag;
  IQAutoToolbarBySubviews:   Creates Toolbar according to subview's hirarchy of Textfield's in view.
  IQAutoToolbarByTag:        Creates Toolbar according to tag property of TextField's.
  IQAutoToolbarByPosition:   Creates Toolbar according to the y,x position of textField in it's superview coordinate.
-
+ 如果输入框不在同一个父视图 那么使用IQAutoToolbarByPosition
  Default is IQAutoToolbarBySubviews.
 */
 @property(nonatomic, assign) IQAutoToolbarManageBehaviour toolbarManageBehaviour;
@@ -160,11 +160,13 @@ extern NSInteger const kIQPreviousNextButtonToolbarTag;
 
 /**
  Override the keyboardAppearance for all textField/textView. Default is NO.
+ UIKeyboardAppearance 弹出的键盘的颜色 如果有夜间模式 键盘颜色可以设为黑色
  */
 @property(nonatomic, assign) BOOL overrideKeyboardAppearance;
 
 /**
  If overrideKeyboardAppearance is YES, then all the textField keyboardAppearance is set using this property.
+ 默认UIKeyboardAppearanceDefault
  */
 @property(nonatomic, assign) UIKeyboardAppearance keyboardAppearance;
 
@@ -255,6 +257,8 @@ extern NSInteger const kIQPreviousNextButtonToolbarTag;
 
 /**
  Allowed subclasses of UIView to add all inner textField, this will allow to navigate between textField contains in different superview. Class should be kind of UIView.
+ UIView子类的集合 默认UITableView UICollectionView IQPreviousNextView
+ 某些比较复杂的情况 多个输入框不在同一个视图上 但是如果根视图属于toolbarPreviousNextAllowedClasses 那么这些视图还是可以通过previous/next来快速切换
  */
 @property(nonatomic, strong, nonnull, readonly) NSMutableSet<Class> *toolbarPreviousNextAllowedClasses;
 

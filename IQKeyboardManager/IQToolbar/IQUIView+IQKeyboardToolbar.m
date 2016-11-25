@@ -1,4 +1,4 @@
-//
+//!
 //  UIView+IQToolbar.m
 // https://github.com/hackiftekhar/IQKeyboardManager
 // Copyright (c) 2013-16 Iftekhar Qurashi.
@@ -35,6 +35,8 @@
 
 /*UIKeyboardToolbar Category implementation*/
 @implementation UIView (IQToolbarAddition)
+
+/// 是否隐藏placeHolder
 
 -(void)setShouldHidePlaceholderText:(BOOL)shouldHidePlaceholderText
 {
@@ -218,7 +220,7 @@
 }
 
 #pragma mark - Toolbar on UIKeyboard
-
+/// 只有placeHolder以及done按钮的inputAccessoryView
 - (void)addRightButtonOnKeyboardWithImage:(UIImage*)image target:(id)target action:(SEL)action titleText:(NSString*)titleText
 {
     //  If can't set InputAccessoryView. Then return
@@ -376,6 +378,8 @@
 {
     [self addDoneOnKeyboardWithTarget:target action:action titleText:nil];
 }
+
+/// 上一个下一个
 
 - (void)addLeftRightOnKeyboardWithTarget:(id)target leftButtonTitle:(NSString*)leftTitle rightButtonTitle:(NSString*)rightTitle leftButtonAction:(SEL)leftAction rightButtonAction:(SEL)rightAction titleText:(NSString*)titleText
 {

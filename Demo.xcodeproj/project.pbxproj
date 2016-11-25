@@ -280,6 +280,7 @@
 		9076AD211DE80A4D009D0A86 /* IQUIView+IQKeyboardToolbar.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IQUIView+IQKeyboardToolbar.h"; sourceTree = "<group>"; };
 		9076AD221DE80A4D009D0A86 /* IQUIView+IQKeyboardToolbar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "IQUIView+IQKeyboardToolbar.m"; sourceTree = "<group>"; };
 		9076AD241DE80A4D009D0A86 /* IQKeyboardManager.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = IQKeyboardManager.bundle; sourceTree = "<group>"; };
+		9076AD251DE80C87009D0A86 /* IQKeyboardManagerCFD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = IQKeyboardManagerCFD.jpg; path = ../../../../../IQKeyboardManagerCFD.jpg; sourceTree = "<group>"; };
 		9D0BB82F18BB1AE100667349 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		9D0BB83018BB1AE100667349 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		9D0BB83118BB1AE100667349 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -494,6 +495,7 @@
 		9076AD001DE80A4D009D0A86 /* IQKeyboardManager */ = {
 			isa = PBXGroup;
 			children = (
+				9076AD251DE80C87009D0A86 /* IQKeyboardManagerCFD.jpg */,
 				9076AD011DE80A4D009D0A86 /* Categories */,
 				9076AD0E1DE80A4D009D0A86 /* Constants */,
 				9076AD111DE80A4D009D0A86 /* IQKeyboardManager.h */,

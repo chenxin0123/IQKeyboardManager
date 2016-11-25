@@ -1,4 +1,4 @@
-//
+//!
 //  UIView+Hierarchy.m
 // https://github.com/hackiftekhar/IQKeyboardManager
 // Copyright (c) 2013-16 Iftekhar Qurashi.
@@ -50,6 +50,7 @@
     return [isAskingCanBecomeFirstResponder boolValue];
 }
 
+/// 遍历nextResponder 找到viewController
 -(UIViewController*)viewController
 {
     UIResponder *nextResponder =  self;
@@ -66,6 +67,7 @@
     return nil;
 }
 
+/// 返回自己所在的视图控制器的层次中最底层的控制器 即最后一个被presented的ViewController
 -(UIViewController *)topMostController
 {
     NSMutableArray *controllersHierarchy = [[NSMutableArray alloc] init];
@@ -77,18 +79,23 @@
         [controllersHierarchy addObject:topController];
     }
     
+    // presentedViewController
     while ([topController presentedViewController]) {
         
         topController = [topController presentedViewController];
         [controllersHierarchy addObject:topController];
     }
     
+    // 自己所在的试图控制器
     UIResponder *matchController = [self viewController];
     
-    while (matchController != nil && [controllersHierarchy containsObject:matchController] == NO)
-    {
+    // 往上找matchController的上一个控制器 直到找到摸个属于controllersHierarchy的视图控制器
+    while (matchController != nil && [controllersHierarchy containsObject:matchController] == NO) {
+        // 遍历nextResponder 找到上一个UIViewController
         do
         {
+            //  UIView implements this method by returning the UIViewController object that manages it (if it has one) or its superview (if it doesn’t)
+            //  UIViewController implements the method by returning its view’s superview
             matchController = [matchController nextResponder];
             
         } while (matchController != nil && [matchController isKindOfClass:[UIViewController class]] == NO);
@@ -97,6 +104,7 @@
     return (UIViewController*)matchController;
 }
 
+/// 查找父视图中classType类的实例
 -(UIView*)superviewOfClassType:(Class)classType
 {
     UIView *superview = self.superview;
@@ -126,6 +134,8 @@
     return nil;
 }
 
+/// 是否可以成为第一响应者
+/// 并不完美。。
 -(BOOL)_IQcanBecomeFirstResponder
 {
     [self _setIsAskingCanBecomeFirstResponder:YES];
@@ -148,6 +158,7 @@
     return _IQcanBecomeFirstResponder;
 }
 
+/// 返回父视图的子视图中所有的输入框 包括自己 不包含子视图的子视图
 - (NSArray*)responderSiblings
 {
     //	Getting all siblings
@@ -163,6 +174,7 @@
     return tempTextFields;
 }
 
+/// 包括自己 包含子视图的子视图 这些输入框之间也可能是父子关系
 - (NSArray*)deepResponderViews
 {
     NSMutableArray *textFields = [[NSMutableArray alloc] init];
@@ -208,6 +220,7 @@
     return textFields;
 }
 
+/// toView为nil 默认为self.window
 -(CGAffineTransform)convertTransformToView:(UIView*)toView
 {
     if (toView == nil)
@@ -238,7 +251,7 @@
     return CGAffineTransformConcat(myTransform, CGAffineTransformInvert(viewTransform));
 }
 
-
+/// 根视图为0 递归
 - (NSInteger)depth
 {
     NSInteger depth = 0;
@@ -251,6 +264,7 @@
     return depth;
 }
 
+/// 用于打印子视图调试信息 递归
 - (NSString *)subHierarchy
 {
     NSMutableString *debugInfo = [[NSMutableString alloc] initWithString:@"\n"];
@@ -292,6 +306,9 @@
     return debugInfo;
 }
 
+/// 用于打印视图层次
+/// 类名: (x,y,w,h) {contentSize: (w,h)} {transform: transformString}
+/// {}内的内容不一定有
 -(NSString *)debugHierarchy
 {
     NSMutableString *debugInfo = [[NSMutableString alloc] init];
@@ -323,6 +340,7 @@
     return ([self isKindOfClass:UISearchBarTextFieldClass] || [self isKindOfClass:[UISearchBar class]]);
 }
 
+/// UIAlertSheet或者UIAlertView上的textField
 -(BOOL)isAlertViewTextField
 {
     //Special textFields,textViews,scrollViews
