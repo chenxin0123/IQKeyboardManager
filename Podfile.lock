@@ -8,9 +8,9 @@ DEPENDENCIES:
 
 EXTERNAL SOURCES:
   IQKeyboardManager:
-    :path: "."
+    :path: .
   IQKeyboardManagerSwift:
-    :path: "."
+    :path: .
 
 SPEC CHECKSUMS:
   IQKeyboardManager: 69002bb4fea60596b710e57d426abc00e5063630
@@ -18,4 +18,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 2fbc048969bb6fcb2e7e11b19e38027eeef497be
 
-COCOAPODS: 1.1.1
+COCOAPODS: 1.0.1
